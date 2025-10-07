@@ -1,0 +1,51 @@
+logging:
+  level: "info"  # Logging level (trace, debug, info, warn, error); overrides RUST_LOG env var
+
+metrics:
+  enabled: false  # Enable/disable OTLP metrics exporting
+  otlp_endpoint: "http://localhost:4318"  # OTLP HTTP endpoint for metrics
+
+cache:
+  enabled: true  # Enable/disable embedded Moka cache
+  ttl_secs: 900  # Cache time-to-live in seconds (15 minutes)
+  max_capacity: 10000  # Maximum number of cache entries
+  strategy: "TTL"  # Cache eviction strategy (Options: TTL, LRU, LFU)
+
+lb:
+  strategy: "RoundRobin"  # Load balancing strategy (Options: RoundRobin)
+  circuitBraker:
+    enabled: true  # Enable circuit breaker for upstream failure handling
+  rateLimiter:
+    enabled: true  # Enable rate limiting for requests
+    rate: 100  # Requests per second
+  healthCheck:
+    period: 3  # Health check interval in seconds
+    timeout: 1  # Health check timeout in seconds
+
+ha:
+  zones:
+    - "1"  # Zone identifier for cross-zone balancing (future)
+    - "a"  # Additional zone identifier
+
+proxy:
+  upstreams:
+    - "127.0.0.1:3001"  # List of upstream server addresses
+  tls:
+    enabled: false  # Enable/disable TLS for proxy
+    cert: "cert.pem"  # Path to TLS certificate file
+    key: "key.pem"  # Path to TLS private key file
+
+auth:
+  jwt:
+    jwt_secret: "your-secret-key"  # JWT secret key; overrides JWT_SECRET env var
+    auth_type: "jwt"  # Authentication type (Options: jwt, oidc)
+  # oidc: {}  # Future: OIDC configuration
+  # mtls: {}  # Future: mTLS configuration
+
+endpoints:
+  public:
+    - "/"
+    - "login"
+  protected:
+    - "portal"
+    - "api"
