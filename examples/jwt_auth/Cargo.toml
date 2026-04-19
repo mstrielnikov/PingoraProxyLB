@@ -1,0 +1,17 @@
+[package]
+name = "example-jwt-auth"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[[bin]]
+name = "jwt_auth"
+path = "main.rs"
+
+[dependencies]
+chainless-lb-backend = { path = "../../backend" }
+tracing = "0.1"
+tokio = { version = "1.47.1", features = ["full"] }
+reqwest = { version = "0.12", features = ["rustls-tls", "json"] }
+serde = { version = "1.0", features = ["derive"] }
+jsonwebtoken = "9.3.0"

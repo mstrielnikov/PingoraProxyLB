@@ -1,0 +1,12 @@
+[workspace]
+resolver = "2"
+members = [
+    "backend",
+    "examples/full_server",
+    "examples/jwt_auth",
+    "examples/tls_pqc",
+    "examples/metrics_export",
+    "examples/grpc_forward",
+    "examples/rps_benchmark",
+    "examples/static_dispatch"
+]

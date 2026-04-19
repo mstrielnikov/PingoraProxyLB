@@ -1,0 +1,33 @@
+[logging]
+level = "info"
+
+[server]
+http_addr = "127.0.0.1:3003"
+https_addr = "127.0.0.1:4433"
+
+[proxy]
+upstreams = ["127.0.0.1:50051"]
+upstream_tls = false
+upstream_sni = ""
+upstream_alpn = "h2"
+
+[proxy.tls]
+enabled = false
+cert = ""
+key = ""
+
+[lb]
+strategy = "RoundRobin"
+
+[lb.circuit_breaker]
+enabled = true
+threshold = 5
+reset_secs = 30
+
+[lb.rate_limiter]
+enabled = false
+rate = 100
+
+[lb.health_check]
+period = 10
+timeout = 3

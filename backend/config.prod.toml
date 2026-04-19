@@ -1,0 +1,66 @@
+# =====================================================================
+# CHAINLESS-LB CONFIGURATION: PRODUCTION
+# This file serves as a Source of Truth. The values here bypass
+# environment ambiguity and directly dictate runtime states, mapping
+# safely to the static-dispatch structures defined at compile time.
+# =====================================================================
+
+[logging]
+# Controls terminal noise. By default, `tracing-appender` routes
+# production payloads dynamically to unblocking `/var/log` targets.
+level = "error"
+
+[server]
+# Ingress sockets for edge connections.
+http_addr = "0.0.0.0:8000"
+https_addr = "0.0.0.0:443"
+# Kernel-level tuning overrides for High Performance Computing environments
+tcp_recv_buf = 4194304
+tcp_send_buf = 4194304
+
+[proxy]
+# Distributed internal subnets resolving via DNS or static pointers.
+upstreams = ["192.168.1.100:8080", "192.168.1.101:8080"]
+# Enable native ALPN upgrades to HTTP/2 internally
+upstream_tls = true
+upstream_sni = "internal-service"
+upstream_alpn = "h2"
+# Match ingress buffer to egress capacities to avoid backpressure queueing
+tcp_recv_buf = 4194304
+
+[proxy.tls]
+# Gate terminating ingress Post-Quantum TLS connections natively
+enabled = true
+cert = "/etc/certs/prod.crt"
+key = "/etc/certs/prod.key"
+
+[lb]
+strategy = "RoundRobin"
+
+[lb.circuit_breaker]
+# Hardware-level fault tolerance; cuts traffic synchronously avoiding long tail latencies
+enabled = true
+threshold = 10
+reset_secs = 60
+
+[lb.rate_limiter]
+# Enforces native bucket throttling natively mapped inside the pipeline trait execution
+enabled = true
+rate = 10000
+
+[lb.health_check]
+period = 5
+timeout = 2
+
+[cache]
+# Moka LRU caching parameters mapping natively into the `CacheTrait`
+enabled = true
+ttl_secs = 300
+max_capacity = 1000000
+strategy = "LFU"
+
+[metrics]
+# Independent OpenTelemetry runtime configurations (mapped alongside compile-time integrations)
+enabled = true
+otlp_endpoint = "http://otel-collector:4317"
+protocol = "grpc"

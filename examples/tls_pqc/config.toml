@@ -1,0 +1,34 @@
+[logging]
+level = "info"
+
+[server]
+http_addr = "127.0.0.1:3005"
+https_addr = "127.0.0.1:4435"
+
+[proxy]
+upstreams = ["127.0.0.1:8080"]
+upstream_tls = false
+upstream_sni = ""
+upstream_alpn = "http/1.1"
+
+[proxy.tls]
+enabled = true
+# Mock actual paths here for the example runtime
+cert = "examples/tls_pqc/dummy.crt"
+key = "examples/tls_pqc/dummy.key"
+
+[lb]
+strategy = "RoundRobin"
+
+[lb.circuit_breaker]
+enabled = false
+threshold = 5
+reset_secs = 30
+
+[lb.rate_limiter]
+enabled = false
+rate = 100
+
+[lb.health_check]
+period = 10
+timeout = 3

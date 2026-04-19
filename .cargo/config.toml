@@ -1,0 +1,5 @@
+[alias]
+build-all = "build --workspace"
+test-all = "test --workspace"
+bench-all = "run -p example-rps-benchmark --release --"
+sandbox = "!./scripts/sandbox_ebpf.sh"

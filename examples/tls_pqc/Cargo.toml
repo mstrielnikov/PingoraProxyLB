@@ -1,0 +1,14 @@
+[package]
+name = "example-tls-pqc"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[[bin]]
+name = "tls_pqc"
+path = "main.rs"
+
+[dependencies]
+chainless-lb-backend = { path = "../../backend" }
+tracing = "0.1"
+rcgen = "0.14.7"

@@ -1,0 +1,39 @@
+[logging]
+level = "error"
+
+[server]
+http_addr = "127.0.0.1:3006"
+https_addr = "127.0.0.1:4436"
+
+[proxy]
+upstreams = ["127.0.0.1:8080"]
+upstream_tls = false
+upstream_sni = ""
+upstream_alpn = "http/1.1"
+
+[proxy.tls]
+enabled = false
+cert = ""
+key = ""
+
+[lb]
+strategy = "RoundRobin"
+
+[lb.circuit_breaker]
+enabled = false
+threshold = 5
+reset_secs = 30
+
+[lb.rate_limiter]
+enabled = false
+rate = 1000
+
+[lb.health_check]
+period = 10
+timeout = 3
+
+[cache]
+enabled = true
+ttl_secs = 60
+max_capacity = 1000
+strategy = "TTL"

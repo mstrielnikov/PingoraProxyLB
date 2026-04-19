@@ -4,23 +4,43 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-pingora = { version = "0.6.0", features = ["lb", "proxy"] }
-pingora-proxy = "0.6.0"
-pingora-load-balancing = "0.6.0"
-auth-framework = "0.4.2"
-moka = { version = "0.12.11", features = ["future"] }
-tokio = { version = "1.47.1", features = ["full"] }
-serde = { version = "1.0.228", features = ["derive"] }
-tower = "0.5.2"
-tracing = "0.1.41"
-tracing-subscriber = { version = "0.3.20", features = ["env-filter"] }
-serde_json = "1.0.145"
-async-trait = "0.1.89"
-bytes = "1.10.1"
-chrono = { version = "0.4.42", features = ["serde"] }
-config = "0.15"
-serde_yaml = "0.9"
-governor = "0.6.3"
-opentelemetry = { version = "0.31.0", features = ["metrics"] }
-opentelemetry-otlp = { version = "0.31.0", features = ["http-proto"] }
-opentelemetry_sdk = { version = "0.31.0", features = ["rt-tokio"] }
+pingora              = { version = "0.8.0", features = ["lb", "proxy", "openssl"] }
+pingora-proxy        = "0.8.0"
+pingora-load-balancing = "0.8.0"
+auth-framework       = { version = "0.4.2", optional = true }
+moka                 = { version = "0.12.11", features = ["future"], optional = true }
+tokio                = { version = "1.47.1", features = ["full"] }
+serde                = { version = "1.0.228", features = ["derive"] }
+tower                = "0.5.2"
+tracing              = "0.1.41"
+tracing-subscriber   = { version = "0.3.20", features = ["env-filter"], optional = true }
+tracing-appender     = "0.2.3"
+serde_json           = "1.0.145"
+async-trait          = "0.1.89"
+bytes                = "1.10.1"
+chrono               = { version = "0.4.42", features = ["serde"] }
+config               = { version = "0.15", features = ["toml"] }
+governor             = "0.6.3"
+opentelemetry        = { version = "0.31.0", features = ["metrics"], optional = true }
+opentelemetry-otlp   = { version = "0.31.0", features = ["http-proto", "metrics"], optional = true }
+opentelemetry_sdk    = { version = "0.31.0", features = ["rt-tokio", "metrics"], optional = true }
+# AuthN/AuthZ provider HTTP client (KratosHttpAuth + future providers)
+reqwest              = { version = "0.12", default-features = false, features = ["json", "rustls-tls"], optional = true }
+# Structured error types
+thiserror            = "2"
+aya                  = { version = "0.13", optional = true }
+
+[features]
+default = []
+auth = ["dep:auth-framework", "dep:reqwest"]
+telemetry = ["dep:opentelemetry", "dep:opentelemetry-otlp", "dep:opentelemetry_sdk", "dep:tracing-subscriber"]
+cache_moka = ["dep:moka"]
+cache_redis = []
+cache_memcache = []
+pqc-kem = []
+hpc_mode = ["tracing/max_level_off", "tracing/release_max_level_off"]
+ebpf = ["dep:aya"]
+
+[dev-dependencies]
+tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread"] }
+

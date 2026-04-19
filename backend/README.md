@@ -1,75 +1,53 @@
-### Technical Tasks for First Iteration: Pingora LB with Auth Middleware & Embedded Cache
+# Chainless-LB Backend (Library SDK)
 
-This iteration focuses on a minimal viable implementation of the Pingora load balancer (LB) as the gateway, integrated with basic auth middleware (using auth-framework for JWT/session validation) and Moka for embedded in-memory caching (e.g., sessions/Tokens). Scope: Single-node PoC, HTTP proxying to a mock backend, no HA/HL scaling, PQC, or advanced features yet. Target: <100ms end-to-end latency for auth-protected requests; 1k RPS throughput.
+This directory houses `chainless-lb-backend`, the core library crate of the Chainless-LB workspace.
 
-#### Prerequisites (Setup Phase: 1-2 Days)
-1. **Environment Setup**:
-    - Install Rust 1.80+ and Cargo.
-    - Create a new Cargo workspace: `cargo new pingora-auth-poc --bin`.
-    - Add dependencies in `Cargo.toml`:
-      ```
-      [dependencies]
-      pingora = "0.3"  # Latest stable for proxy
-      pingora-proxy = "0.3"
-      auth-framework = "0.4"  # For middleware
-      moka = { version = "0.12", features = ["future"] }  # Embedded cache
-      tokio = { version = "1", features = ["full"] }
-      serde = { version = "1", features = ["derive"] }
-      jsonwebtoken = "9"  # JWT utils
-      tower = "0.4"  # For middleware chaining
-      tracing = "0.1"  # Logging
-      ```
-    - Set up a mock backend (e.g., simple Axum server on localhost:3001 echoing requests).
+Unlike traditional monolithic proxies, the backend is purposefully developed as an **embeddable edge SDK**. It abstracts away the heavy lifting of `pingora`, OpenTelemetry, circuit breaking, and protocol decoding into highly modular Rust traits. It enables you to consume this library to build your own custom edge topology or gateway endpoints (refer to the `/examples/` directory for robust implementations).
 
-2. **Project Structure**:
-    - Organize: `src/main.rs` (entrypoint), `src/proxy.rs` (Pingora config), `src/auth_middleware.rs` (auth logic), `src/cache.rs` (Moka setup).
+## Core SDK Features
 
-#### Implementation Phase (3-5 Days)
-3. **Pingora LB Core Setup**:
-    - In `src/proxy.rs`: Configure basic HTTP proxy with TLS termination (rustls for localhost self-signed cert).
-        - Listen on 0.0.0.0:443; proxy all `/api/*` to mock backend.
-        - Enable HTTP/2 and connection pooling.
-        - Task: Write `ProxyHttp` service; test basic forwarding with `curl https://localhost/api/test`.
+1. **Static Pipeline Dispatching:**
+   - Uses zero-cost abstractions by type-locking execution pipelines at compile time via the `PipelineBuilder` and `ErasedPipeline` mapping.
+   - Middlewares like Rate Limiters (`rate_limit.rs`) and Circuit Breakers (`circuit_breaker.rs`) are executed rapidly without runtime `Box<dyn ...>` allocation overhead.
 
-4. **Embed Moka Cache**:
-    - In `src/cache.rs`: Create an Arc-shared `Cache<String, String>` with TTL=15min, max_capacity=10k entries.
-        - Methods: `async get_session(key: &str) -> Option<String>`, `async insert_session(key: &str, value: String)`.
-        - Encrypt values with a simple AES key (from env; placeholder for Vault).
-    - Task: Integrate into main: Pass `Arc<Cache>` to proxy context; test insert/get with a simple Tokio task.
+2. **Kernel-Space Hooks (eBPF):**
+   - The `/ebpf/` module relies on the `aya` framework to natively inject safe, Rust-compiled XDP filters directly into the Linux kernel stack.
+   - Provides mechanisms like `block_ip()` and `allow_ip()` outside of user-space traffic limits.
 
-5. **Auth Middleware Implementation**:
-    - In `src/auth_middleware.rs`: Build a Tower service for pre-proxy hook.
-        - Extract `Authorization: Bearer <token>` from headers.
-        - Validate JWT with auth-framework's `verify_token` (claims: sub, exp, iat); fallback to session lookup in Moka.
-        - On valid: Proceed; invalid/missing: Return 401 with WWW-Authenticate header.
-        - Cache validated sessions (key: `session:{user_id}`, value: serialized claims).
-    - Task: Register as `add_pre_hook` in Pingora; test with a generated JWT (use `jsonwebtoken::encode` for PoC).
+3. **Pluggable Architecture:**
+   - **Authentication:** Controlled by the `AuthProvider` trait. The `NoOpAuth` provider enables raw passthrough, while custom handlers can seamlessly verify JWTs, delegate to ORY networks, or execute local PKI checks without altering the core LB runtime.
+   - **Caching:** Governed by the `CacheTrait`. Natively integrates `moka` (a heavily concurrent LRU cache paradigm) but is designed to allow custom SSD / persistence traits mapped directly into the internal Pingora router.
 
-6. **Integration & Basic Flows**:
-    - In `src/main.rs`: Wire components—init cache, start proxy with middleware, run Tokio runtime.
-        - Add a simple `/auth/login` endpoint (mock: issue JWT on POST with dummy creds).
-    - Task: End-to-end test: Login → Get token → Protected API call (cached hit/miss).
+4. **Deep Observability:**
+   - The `observability/` engine dynamically routes traffic into `/var/log` targets (using `tracing-appender` for non-blocking production output) or local streams based on TOML parameters.
+   - Natively connects `prometheus` histogram payloads back out as seamless OTLP formats (gRPC or HTTP).
 
-#### Testing & Validation Phase (1-2 Days)
-7. **Unit/Integration Tests**:
-    - Use `#[tokio::test]` for async: Mock requests, assert middleware rejects invalid tokens, cache TTL expiry.
-    - Task: Cover 80% with `cargo test`; include tracing spans for debug.
+## Integration Guide
 
-8. **Performance & Security Smoke Tests**:
-    - Load: Use `wrk` or `k6` for 1k RPS on protected endpoint; measure p99 <100ms.
-    - Security: Test replay (blacklist in cache), poisoning (sanitize keys before insert).
-    - Task: Run locally; log metrics (e.g., cache hit rate >70%).
+To consume the `chainless-lb-backend` inside a custom Rust application, simply add it to your `Cargo.toml`:
 
-#### Deliverables & Next Steps
-- **Output**: Runnable binary (`cargo run`) serving protected proxy; basic README with setup/curls.
-- **Risks/Mitigations**: Pingora config quirks—use examples from repo; auth edge cases—mock auth-framework calls.
-- **Iteration 2 Teaser**: Add WASM frontend serving and Vault integration.
+```toml
+[dependencies]
+chainless-lb-backend = { path = "../backend" }
+```
 
-# TODO
+You can then natively initialize the static topology using `config::load_config()` to acquire your TOML payload, and securely dispatch Pingora structures over traits logic:
 
-1. Connect with secret manager
-2. Rate limiter + cache
-2. Circuit braker
-3. CORS
-4. Abstragate middleware: Auth<Session<Protocol>>, Session<Protocol>, Downstream / Upstream <Protocol>
-5. Metric exporting
+```rust
+use chainless_lb_backend::proxy::LB;
+use chainless_lb_backend::middleware::PipelineBuilder;
+
+// Assemble zero-cost structures statically matched with your TOML
+let pipeline = PipelineBuilder::new()
+    .with_rate_limit(10_000)
+    .build();
+
+// ... Insert into Pingora execution context natively
+```
+
+## Internal Dependencies Highlights
+
+- **pingora (0.8.0):** The native `C++` NGINX replacement built by Cloudflare strictly handling multi-threaded event looping and downstream sockets.
+- **moka (0.12):** Used for advanced cache abstractions avoiding heavy lock contentions in `CacheTrait`.
+- **aya:** Replaces raw C bindings to deploy BPF routing configurations into the OS safely.
+- **opentelemetry / tracing:** Handles edge-level non-blocking analytics reporting to minimize request latency hits.

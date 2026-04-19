@@ -1,0 +1,68 @@
+# =====================================================================
+# CHAINLESS-LB CONFIGURATION: EDGE DELIVERY DEFAULTS
+# Used when `load_config(None)` is invoked. Defines structural baseline
+# behaviors mapped natively into the compiled executable as fallback configurations.
+# =====================================================================
+
+[logging]
+level = "info"
+
+[server]
+http_addr = "0.0.0.0:3000"
+https_addr = "0.0.0.0:443"
+
+[proxy]
+# Defaults to local dev testing clusters
+upstreams = ["127.0.0.1:8080", "127.0.0.1:8081"]
+upstream_tls = false
+upstream_sni = ""
+upstream_alpn = "http/1.1"
+
+[proxy.tls]
+enabled = false
+cert = ""
+key = ""
+
+[lb]
+strategy = "RoundRobin"
+
+[lb.circuit_breaker]
+enabled = true
+threshold = 5
+reset_secs = 30
+
+[lb.rate_limiter]
+enabled = true
+rate = 100
+
+[lb.health_check]
+period = 10
+timeout = 3
+
+# ==========================================================
+# Feature-Gated Modules 
+# Optional states acting as configuration dispatch parameters.
+# Un-commenting these structurally defines logic executed internally
+# ==========================================================
+
+# [cache]
+# enabled = true
+# ttl_secs = 60
+# max_capacity = 10000
+# strategy = "TTL"
+
+# [auth]
+# provider = "noop"
+#
+# ## Kratos Local Validations (Stateless Cryptographic Map)
+# # provider = "kratos_local"
+# # jwt_secret = "secret"
+# # issuer = "chainless-lb-backend"
+# 
+# ## Raw OIDC Verify (Remote Identity Provider Integration)
+# # provider = "jwt_oidc"
+# # endpoint = "https://example.com"
+
+# [metrics]
+# enabled = true
+# otlp_endpoint = "http://localhost:4317"

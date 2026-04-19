@@ -63,10 +63,10 @@ pub fn create_load_balancer(config: &AppConfig) -> Result<PingoraLB, Box<dyn std
     upstreams.set_health_check(Box::new(CustomHttpHealthCheck::new(
         "/health",
         false,
-        Duration::from_secs(config.lb.healthCheck.period),
-        Duration::from_secs(config.lb.healthCheck.timeout),
+        Duration::from_secs(config.lb.health_check.period),
+        Duration::from_secs(config.lb.health_check.timeout),
     )));
-    if config.lb.circuitBraker.enabled {
+    if config.lb.circuit_breaker.enabled {
         tracing::warn!("Circuit breaker not supported in pingora v0.6.0; ignoring");
     }
     Ok(PingoraLB::new(Arc::new(upstreams)))

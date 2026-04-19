@@ -1,0 +1,15 @@
+[package]
+name = "example-rps-benchmark"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[[bin]]
+name = "rps_benchmark"
+path = "main.rs"
+
+[dependencies]
+chainless-lb-backend = { path = "../../backend" }
+tracing = "0.1"
+tokio = { version = "1.47.1", features = ["full"] }
+goose = "0.18.1"

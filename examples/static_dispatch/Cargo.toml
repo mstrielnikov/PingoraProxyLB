@@ -1,0 +1,14 @@
+[package]
+name = "example-static-dispatch"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[[bin]]
+name = "static_dispatch"
+path = "main.rs"
+
+[dependencies]
+chainless-lb-backend = { path = "../../backend" }
+pingora = { version = "0.8.0", features = ["lb", "proxy", "openssl"] }
+tracing = "0.1"

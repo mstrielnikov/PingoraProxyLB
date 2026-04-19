@@ -1,0 +1,55 @@
+# =====================================================================
+# CHAINLESS-LB CONFIGURATION: DEVELOPMENT
+# Useful for local `cargo test` and `cargo run` workflows. State values
+# mapped here reflect isolated topological needs (127.0.0.1 limits).
+# =====================================================================
+
+[logging]
+# Dumps full span cascades into standard out since non-blocking 
+# appenders are disabled outside of APP_ENV=production.
+level = "debug"
+
+[server]
+# Binds selectively to localhost to protect testing telemetry
+http_addr = "127.0.0.1:3000"
+https_addr = "127.0.0.1:443"
+
+[proxy]
+upstreams = ["127.0.0.1:8080"]
+# Internal traffic stays plaintext for easy local wireshark parsing
+upstream_tls = false
+upstream_sni = ""
+upstream_alpn = "http/1.1"
+
+[proxy.tls]
+enabled = false
+cert = ""
+key = ""
+
+[lb]
+strategy = "RoundRobin"
+
+[lb.circuit_breaker]
+enabled = true
+threshold = 5
+reset_secs = 30
+
+[lb.rate_limiter]
+# Relax limits natively so developers aren't arbitrarily dropped while interacting locally
+enabled = false
+rate = 1000
+
+[lb.health_check]
+period = 10
+timeout = 3
+
+[cache]
+# Moka is often explicitly disabled in Dev to forcefully validate 
+# upstream logic and authentication code logic on every hit
+enabled = false
+
+[metrics]
+enabled = true
+# Dumps to a local HTTP collector dynamically 
+otlp_endpoint = "http://127.0.0.1:4318/v1/metrics"
+protocol = "http"
